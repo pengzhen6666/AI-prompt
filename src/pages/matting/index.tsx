@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/supabase";
 import { useUserStore } from "@/store/userStore";
 import { uploadFileServerAPI, defaultBucket } from "@/servers/upload";
+import { compressImage } from "@/lib/imageCompression";
 
 interface HistoryItem {
     id: string;
@@ -186,7 +187,7 @@ const MattingPage = () => {
 
         setIsProcessing(true);
         setProgress(0);
-        setLoadingSubtext("准备资源中...");
+        setLoadingSubtext("图片预处理中...");
 
         try {
             // 1. Revoke old blob if any (safety)
@@ -194,28 +195,46 @@ const MattingPage = () => {
                 URL.revokeObjectURL(processedImage);
             }
 
-            // 2. Process
-            const blob = await removeBackground(originalImage, {
+            // 2. Pre-process image (Scale down for stability)
+            // Excessive resolution (like 4K) is the main reason for browser freeze.
+            // 1280px is a sweet spot for quality vs performance.
+            const response = await fetch(originalImage);
+            const rawBlob = await response.blob();
+            const rawFile = new File([rawBlob], "input.png", { type: rawBlob.type });
+
+            const compressedFile = await compressImage(rawFile, 10, 1280); // Max 10MB, Max 1280px
+            setLoadingSubtext("准备 AI 资源...");
+
+            // 3. Process with AI
+            const blob = await removeBackground(compressedFile, {
                 progress: (key: string, current: number, total: number) => {
                     const percent = Math.round((current / total) * 100);
                     setProgress(percent);
                     if (key.includes("fetch")) setLoadingSubtext(`下载模型: ${percent}%`);
                     else if (key.includes("compute")) setLoadingSubtext(`AI 处理中: ${percent}%`);
                     else setLoadingSubtext(`正在处理... ${percent}%`);
-                }
+                },
+                // Optional: model: "small" or "medium" if stability is priority over hair-line precision
+                // fetchArgs: { mode: 'no-cors' }
             });
 
-            // 3. Create URL
+            // 4. Create URL
             const url = URL.createObjectURL(blob);
             setProcessedImage(url);
 
-            // 4. Save
+            // 5. Save
             await saveToHistory(originalImage, url);
             toast.success(t("common:matting_success"));
 
         } catch (error: any) {
             console.error("Matting Error:", error);
-            toast.error(error.message || "抠像失败，请稍后重试");
+            // Check for specific errors like memory
+            const errorMsg = error.message || "";
+            if (errorMsg.includes("out of memory")) {
+                toast.error("图片过大，内存溢出，请尝试更小的图片");
+            } else {
+                toast.error("处理失败，请刷新页面或尝试减少图片分辨率");
+            }
         } finally {
             setIsProcessing(false);
             setProgress(0);
@@ -428,22 +447,22 @@ const MattingPage = () => {
                 <div className="w-full mt-auto">
                     <button
                         onClick={handleMatting}
-                        disabled={!originalImage || isProcessing || !!processedImage}
+                        disabled={!originalImage || isProcessing}
                         className={cn(
                             "w-full h-14 rounded-xl font-bold text-lg tracking-widest flex items-center justify-center gap-2 transition-all duration-300 relative overflow-hidden",
-                            processedImage
-                                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-default"
+                            processedImage && !isProcessing
+                                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20"
                                 : !originalImage
                                     ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-white/5"
                                     : "bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#d946ef] text-white hover:brightness-110 shadow-[0_0_40px_-10px_rgba(139,92,246,0.5)] border border-white/10 active:scale-[0.99] group"
                         )}
                     >
-                        {processedImage ? (
+                        {processedImage && !isProcessing ? (
                             <>
                                 <div className="p-1 rounded-full bg-emerald-500/20">
                                     <CheckCircle2 className="w-4 h-4" />
                                 </div>
-                                <span className="text-base">处理完成</span>
+                                <span className="text-base text-emerald-400">处理完成 (点击重新生成)</span>
                             </>
                         ) : isProcessing ? (
                             <>
@@ -464,23 +483,35 @@ const MattingPage = () => {
                         )}
                     </button>
 
-                    {/* Reset Button (Only when processed) */}
-                    {processedImage && (
-                        <button
-                            onClick={() => {
-                                if (processedImage && processedImage.startsWith("blob:")) {
-                                    URL.revokeObjectURL(processedImage);
-                                }
-                                setProcessedImage(null);
-                                setOriginalImage(null);
-                                setIsProcessing(false);
-                                setProgress(0);
-                            }}
-                            className="w-full mt-3 py-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            开始新的任务
-                        </button>
+                    {/* Reset & Retry Buttons */}
+                    {processedImage && !isProcessing && (
+                        <div className="flex gap-4 mt-3">
+                            <button
+                                onClick={() => {
+                                    setProcessedImage(null);
+                                    handleMatting();
+                                }}
+                                className="flex-1 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5"
+                            >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                重新抠图
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (processedImage && processedImage.startsWith("blob:")) {
+                                        URL.revokeObjectURL(processedImage);
+                                    }
+                                    setProcessedImage(null);
+                                    setOriginalImage(null);
+                                    setIsProcessing(false);
+                                    setProgress(0);
+                                }}
+                                className="flex-1 py-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                                开始新的任务
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
