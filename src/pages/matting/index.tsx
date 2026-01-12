@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import { removeBackground } from "@/servers/ai";
+// @ts-ignore
+import { removeBackground } from "@imgly/background-removal";
 import { toast } from "sonner";
 import {
     Sheet,
@@ -23,57 +24,143 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
+import { supabase } from "@/supabase";
+import { useUserStore } from "@/store/userStore";
+import { uploadFileServerAPI, defaultBucket } from "@/servers/upload";
 
 interface HistoryItem {
     id: string;
-    original: string;
-    processed: string;
-    timestamp: number;
+    original_url: string;
+    processed_url: string;
+    created_at: string;
 }
 
 const MattingPage = () => {
     const { t } = useTranslation(["common"]);
+    const { user } = useUserStore();
     const [originalImage, setOriginalImage] = useState<string | null>(null);
-    const [processedImage, setProcessedImage] = useState<string | null>(null);
+    const [processedImage, setProcessedImage] = useState<string | null>(null); // This is a Blob URL for display
     const [isProcessing, setIsProcessing] = useState(false);
+    const [progress, setProgress] = useState<number>(0);
+    const [loadingSubtext, setLoadingSubtext] = useState<string>("初始化中...");
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // History State
     const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-    useEffect(() => {
-        const saved = localStorage.getItem("matting_history");
-        if (saved) {
-            try {
-                setHistory(JSON.parse(saved));
-            } catch (e) {
-                console.error("Failed to load history", e);
-            }
+    const fetchHistory = async () => {
+        if (!user) {
+            setHistory([]);
+            return;
         }
-    }, []);
+        setIsLoadingHistory(true);
+        try {
+            const { data, error } = await supabase
+                .from("pzcreated image")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("created_at", { ascending: false })
+                .limit(20);
 
-    const saveToHistory = (original: string, processed: string) => {
-        const newItem: HistoryItem = {
-            id: Date.now().toString(),
-            original,
-            processed,
-            timestamp: Date.now(),
-        };
-        const newHistory = [newItem, ...history];
-        setHistory(newHistory);
-        localStorage.setItem("matting_history", JSON.stringify(newHistory));
+            if (error) throw error;
+            setHistory(data || []);
+        } catch (e) {
+            console.error("Failed to fetch history", e);
+        } finally {
+            setIsLoadingHistory(false);
+        }
     };
 
-    const deleteHistoryItem = (e: React.MouseEvent, id: string) => {
+    useEffect(() => {
+        fetchHistory();
+
+        // Cleanup blob URLs on unmount
+        return () => {
+            if (processedImage && processedImage.startsWith("blob:")) {
+                URL.revokeObjectURL(processedImage);
+            }
+        };
+    }, [user?.id]);
+
+    const saveToHistory = async (originalBase64: string, processedBlobUrl: string) => {
+        if (!user) return;
+
+        try {
+            // 1. Convert Original Base64 to Blob
+            const originalRes = await fetch(originalBase64);
+            const originalBlob = await originalRes.blob();
+            const originalFile = new File([originalBlob], `original_${Date.now()}.png`, { type: "image/png" });
+
+            // 2. Convert Processed Blob URL to Blob
+            const processedRes = await fetch(processedBlobUrl);
+            const processedBlob = await processedRes.blob();
+            const processedFile = new File([processedBlob], `processed_${Date.now()}.png`, { type: "image/png" });
+
+            // 3. Upload Original
+            const originalPath = `matting/original/${user.id}/${Date.now()}.png`;
+            await uploadFileServerAPI({
+                file: originalFile,
+                name: originalPath
+            });
+
+            // 4. Upload Processed
+            const processedPath = `matting/processed/${user.id}/${Date.now()}.png`;
+            await uploadFileServerAPI({
+                file: processedFile,
+                name: processedPath
+            });
+
+            // 5. Get Public URLs
+            const { data: { publicUrl: originalUrl } } = supabase.storage.from(defaultBucket).getPublicUrl(originalPath);
+            const { data: { publicUrl: processedUrl } } = supabase.storage.from(defaultBucket).getPublicUrl(processedPath);
+
+            // 6. DB Insert
+            const { error: dbError } = await supabase
+                .from("pzcreated image")
+                .insert([{
+                    user_id: user.id,
+                    original_url: originalUrl,
+                    processed_url: processedUrl,
+                }]);
+
+            if (dbError) throw dbError;
+
+            fetchHistory(); // Refresh
+        } catch (e) {
+            console.error("Failed to save history", e);
+            toast.error("历史记录同步失败");
+        }
+    };
+
+    const deleteHistoryItem = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        const newHistory = history.filter(item => item.id !== id);
-        setHistory(newHistory);
-        localStorage.setItem("matting_history", JSON.stringify(newHistory));
+        if (!user) return;
+
+        try {
+            const { error } = await supabase
+                .from("pzcreated image")
+                .delete()
+                .eq("id", id)
+                .eq("user_id", user.id);
+
+            if (error) throw error;
+            setHistory(prev => prev.filter(item => item.id !== id));
+            toast.success("删除成功");
+        } catch (e) {
+            console.error("Failed to delete history", e);
+            toast.error("删除失败");
+        }
     };
 
     const loadHistoryItem = (item: HistoryItem) => {
-        setOriginalImage(item.original);
-        setProcessedImage(item.processed);
+        // Revoke current if blob
+        if (processedImage && processedImage.startsWith("blob:")) {
+            URL.revokeObjectURL(processedImage);
+        }
+        setOriginalImage(item.original_url);
+        setProcessedImage(item.processed_url);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +170,11 @@ const MattingPage = () => {
             reader.onloadend = () => {
                 const url = reader.result as string;
                 setOriginalImage(url);
+
+                // Clear previous result
+                if (processedImage && processedImage.startsWith("blob:")) {
+                    URL.revokeObjectURL(processedImage);
+                }
                 setProcessedImage(null);
             };
             reader.readAsDataURL(file);
@@ -93,41 +185,53 @@ const MattingPage = () => {
         if (!originalImage || isProcessing) return;
 
         setIsProcessing(true);
-        try {
-            const result = await removeBackground({ image: originalImage });
+        setProgress(0);
+        setLoadingSubtext("准备资源中...");
 
-            if (result && result.url) {
-                setProcessedImage(result.url);
-                saveToHistory(originalImage, result.url);
-                toast.success(t("common:matting_success"));
-            } else {
-                throw new Error("处理失败，未获取到图片链接");
+        try {
+            // 1. Revoke old blob if any (safety)
+            if (processedImage && processedImage.startsWith("blob:")) {
+                URL.revokeObjectURL(processedImage);
             }
+
+            // 2. Process
+            const blob = await removeBackground(originalImage, {
+                progress: (key: string, current: number, total: number) => {
+                    const percent = Math.round((current / total) * 100);
+                    setProgress(percent);
+                    if (key.includes("fetch")) setLoadingSubtext(`下载模型: ${percent}%`);
+                    else if (key.includes("compute")) setLoadingSubtext(`AI 处理中: ${percent}%`);
+                    else setLoadingSubtext(`正在处理... ${percent}%`);
+                }
+            });
+
+            // 3. Create URL
+            const url = URL.createObjectURL(blob);
+            setProcessedImage(url);
+
+            // 4. Save
+            await saveToHistory(originalImage, url);
+            toast.success(t("common:matting_success"));
+
         } catch (error: any) {
             console.error("Matting Error:", error);
             toast.error(error.message || "抠像失败，请稍后重试");
         } finally {
             setIsProcessing(false);
+            setProgress(0);
         }
     };
 
     const handleDownload = async (urlToDownload?: string) => {
         const targetUrl = urlToDownload || processedImage;
         if (!targetUrl) return;
-        try {
-            const response = await fetch(targetUrl);
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `matting-${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            toast.error("下载失败");
-        }
+
+        const link = document.createElement("a");
+        link.href = targetUrl;
+        link.download = `matting-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -141,8 +245,6 @@ const MattingPage = () => {
                 <p className="text-zinc-400 text-sm md:text-base font-medium max-w-xl mx-auto">
                     发丝级精细分割，一键抠图，让你的素材处理更高效。
                 </p>
-
-
             </div>
 
             {/* Main Container */}
@@ -164,7 +266,12 @@ const MattingPage = () => {
                                 </SheetTitle>
                             </SheetHeader>
                             <div className="mt-8 grid grid-cols-2 gap-4 max-h-[calc(100vh-100px)] overflow-y-auto pr-2 custom-scrollbar pb-8">
-                                {history.length === 0 ? (
+                                {isLoadingHistory ? (
+                                    <div className="col-span-2 text-center text-zinc-500 py-20 flex flex-col items-center gap-4">
+                                        <Loader2 className="w-12 h-12 animate-spin text-purple-500/50" />
+                                        <span>正在获取云端记录...</span>
+                                    </div>
+                                ) : history.length === 0 ? (
                                     <div className="col-span-2 text-center text-zinc-500 py-20 flex flex-col items-center gap-4">
                                         <History className="w-12 h-12 opacity-20" />
                                         <span>暂无历史记录</span>
@@ -176,7 +283,6 @@ const MattingPage = () => {
                                             className="group relative aspect-square rounded-xl bg-zinc-900 border border-zinc-800/50 overflow-hidden cursor-pointer hover:border-purple-500/50 transition-all duration-300"
                                             onClick={() => {
                                                 loadHistoryItem(item);
-                                                // Optional: Close sheet here
                                             }}
                                         >
                                             <div className="absolute inset-0 opacity-20"
@@ -185,18 +291,18 @@ const MattingPage = () => {
                                                     backgroundSize: '10px 10px'
                                                 }}
                                             />
-                                            <img src={item.processed} className="relative w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-110" alt="History" />
+                                            <img src={item.processed_url} className="relative w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-110" alt="History" />
 
                                             {/* Hover Actions */}
                                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 backdrop-blur-[2px]">
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); deleteHistoryItem(e, item.id); }}
+                                                    onClick={(e) => deleteHistoryItem(e, item.id)}
                                                     className="p-2 rounded-full bg-white/10 hover:bg-red-500/80 text-white transition-colors"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); handleDownload(item.processed); }}
+                                                    onClick={(e) => { e.stopPropagation(); handleDownload(item.processed_url); }}
                                                     className="p-2 rounded-full bg-white/10 hover:bg-purple-600/80 text-white transition-colors"
                                                 >
                                                     <Download className="w-4 h-4" />
@@ -267,13 +373,8 @@ const MattingPage = () => {
                         <div className="text-sm font-bold text-zinc-400 pl-1 tracking-wide uppercase">抠图结果</div>
                         <div className="flex-1 relative w-full aspect-square rounded-[24px] border-2 border-dashed border-zinc-700 bg-zinc-900/30 flex flex-col items-center justify-center overflow-hidden">
                             {/* Grid bg */}
-                            <div className="absolute inset-0 opacity-10 pointer-events-none"
-                                style={{
-                                    backgroundImage: `linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%)`,
-                                    backgroundSize: '20px 20px',
-                                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-                                }}
-                            />
+                            {/* White bg */}
+                            {processedImage && <div className="absolute inset-0 bg-white pointer-events-none" />}
 
                             {processedImage ? (
                                 <div className="relative w-full h-full flex items-center justify-center p-6 animate-in fade-in duration-500">
@@ -285,19 +386,31 @@ const MattingPage = () => {
                                             title="Download"
                                         >
                                             <Download className="w-3.5 h-3.5" />
-                                            Download
+                                            下载透明图片
                                         </button>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center text-zinc-600">
                                     {isProcessing ? (
-                                        <div className="flex flex-col items-center gap-4">
+                                        <div className="flex flex-col items-center gap-6 w-full px-12">
                                             <div className="relative">
                                                 <div className="absolute inset-0 bg-purple-500 blur-xl opacity-20 rounded-full animate-pulse"></div>
                                                 <Loader2 className="relative w-12 h-12 animate-spin text-purple-500" />
                                             </div>
-                                            <div className="text-sm font-medium text-purple-400 animate-pulse tracking-wider">正在智能抠图中...</div>
+                                            <div className="w-full space-y-2">
+                                                <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-purple-400">
+                                                    <span>AI Processing</span>
+                                                    <span>{progress}%</span>
+                                                </div>
+                                                <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-300 ease-out"
+                                                        style={{ width: `${progress}%` }}
+                                                    />
+                                                </div>
+                                                <div className="text-center text-xs text-zinc-500 mt-2 font-mono">{loadingSubtext}</div>
+                                            </div>
                                         </div>
                                     ) : (
                                         <>
@@ -335,7 +448,7 @@ const MattingPage = () => {
                         ) : isProcessing ? (
                             <>
                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                <span className="text-base">正在 AI 抠图中...</span>
+                                <span className="text-base">正在 AI 抠图中 ({progress}%)</span>
                             </>
                         ) : (
                             <>
@@ -355,9 +468,13 @@ const MattingPage = () => {
                     {processedImage && (
                         <button
                             onClick={() => {
+                                if (processedImage && processedImage.startsWith("blob:")) {
+                                    URL.revokeObjectURL(processedImage);
+                                }
                                 setProcessedImage(null);
                                 setOriginalImage(null);
                                 setIsProcessing(false);
+                                setProgress(0);
                             }}
                             className="w-full mt-3 py-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center gap-2"
                         >
