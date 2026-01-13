@@ -1,0 +1,92 @@
+﻿src\components\DebugMode.tsx:      const { error } = await supabase.from("generated_prompts").insert({
+src\components\DebugMode.tsx:      const { error } = await supabase.from("generated_copywriting").insert({
+src\components\Feedback.tsx:      const { error } = await supabase.from("feedbacks").insert({
+src\components\FloatingContact.tsx:        .from("conversations")
+src\components\FloatingContact.tsx:          .from("conversations")
+src\components\FloatingContact.tsx:        .from("messages")
+src\components\FloatingContact.tsx:        .from("messages")
+src\components\ImageInput.tsx:    const files = Array.from(e.target.files || []);
+src\components\ImageInput.tsx:    const files = Array.from(e.dataTransfer.files).filter((f) =>
+src\components\Snowflakes.tsx:    return Array.from({ length: 50 }).map((_, i) => ({
+src\lib\analytics.ts:        .from("analytics_events")
+src\pages\action-style\index.tsx:          .from(defaultBucket)
+src\pages\background\index.tsx:    const cols: PromptDisplay[][] = Array.from(
+src\pages\face-style\index.tsx:        .from(defaultBucket)
+src\pages\home\index.tsx:    const cols: PromptDisplay[][] = Array.from(
+src\pages\image-to-text\index.tsx:          .from("generated_copywriting")
+src\pages\image-to-text\index.tsx:    const hashArray = Array.from(new Uint8Array(hashBuffer));
+src\pages\image-to-text\index.tsx:          .from(defaultBucket)
+src\pages\image-to-text\index.tsx:            .from(defaultBucket)
+src\pages\image-to-text\index.tsx:              .from(defaultBucket)
+src\pages\image-to-text\index.tsx:        .from("generated_copywriting")
+src\pages\image-to-text\index.tsx:        .from("generated_copywriting")
+src\pages\image-to-text\index.tsx:        .from("generated_copywriting")
+src\pages\matting\index.tsx:                .from("pzcreated image")
+src\pages\matting\index.tsx:            const { data: { publicUrl: originalUrl } } = supabase.storage.from(defaultBucket).getPublicUrl(originalPath);
+src\pages\matting\index.tsx:            const { data: { publicUrl: processedUrl } } = supabase.storage.from(defaultBucket).getPublicUrl(processedPath);
+src\pages\matting\index.tsx:                .from("pzcreated image")
+src\pages\matting\index.tsx:                .from("pzcreated image")
+src\pages\prompt\index.tsx:          .from("generated_prompts")
+src\pages\prompt\index.tsx:        .from("generated_prompts")
+src\pages\prompt\index.tsx:        .from("generated_video_prompts")
+src\pages\prompt\index.tsx:    const hashArray = Array.from(new Uint8Array(hashBuffer));
+src\pages\prompt\index.tsx:            .from(defaultBucket)
+src\pages\prompt\index.tsx:            .from(defaultBucket)
+src\pages\prompt\index.tsx:          .from("generated_prompts")
+src\pages\prompt\index.tsx:        : await supabase.from("generated_prompts").insert(insertPayload);
+src\pages\prompt\index.tsx:        .from(defaultBucket)
+src\pages\prompt\index.tsx:          .from(defaultBucket)
+src\pages\prompt\index.tsx:            .from(defaultBucket)
+src\pages\prompt\index.tsx:          .from("generated_video_prompts")
+src\pages\prompt\index.tsx:        : await supabase.from("generated_video_prompts").insert(insertPayload);
+src\pages\prompt\index.tsx:        .from("generated_prompts")
+src\pages\prompt\index.tsx:      const { error } = await supabase.from("prompt_submissions").insert([
+src\pages\prompt\index.tsx:          .from(table)
+src\servers\action_style.ts:    .from("action_styles")
+src\servers\action_style.ts:    .from("action_styles")
+src\servers\action_style.ts:  const { error } = await supabase.from("action_styles").delete().eq("id", id);
+src\servers\ai.ts:    .from("generated_images")
+src\servers\ai.ts:    .from("generated_images")
+src\servers\ai.ts:    .from("generated_images")
+src\servers\ai.ts:    .from("generated_images")
+src\servers\ai.ts:    .from("generated_videos")
+src\servers\ai.ts:    .from("generated_videos")
+src\servers\ai.ts:    .from("generated_videos")
+src\servers\ai.ts:    .from("pzcreated")
+src\servers\ai.ts:    .from("pzcreated")
+src\servers\face_style.ts:    .from("face_styles")
+src\servers\face_style.ts:    .from("face_styles")
+src\servers\face_style.ts:  const { error } = await supabase.from("face_styles").delete().eq("id", id);
+src\servers\giftcards.ts:      .from("gift_cards")
+src\servers\giftcards.ts:      .from("user_profiles")
+src\servers\giftcards.ts:      .from("gift_cards")
+src\servers\giftcards.ts:      .from("user_profiles")
+src\servers\giftcards.ts:      .from("balance_transactions")
+src\servers\history.ts:    .from("generated_prompts")
+src\servers\history.ts:    .from("generated_copywriting")
+src\servers\history.ts:    .from("generated_prompts")
+src\servers\history.ts:    .from("generated_copywriting")
+src\servers\history.ts:    .from("generated_prompts")
+src\servers\history.ts:    .from("generated_copywriting")
+src\servers\history.ts:    .from("prompt_submissions")
+src\servers\history.ts:    .from("generated_prompts")
+src\servers\invitation.ts:      .from("invitation_codes")
+src\servers\marketing.ts:    .from("marketing_personas")
+src\servers\marketing.ts:    .from("marketing_personas")
+src\servers\marketing.ts:    .from("marketing_personas")
+src\servers\marketing.ts:      .from("marketing_personas")
+src\servers\marketing.ts:    .from("marketing_personas")
+src\servers\marketing.ts:    .from("marketing_personas")
+src\servers\marketing.ts:    .from("marketing_strategies")
+src\servers\notifications.ts:    .from("notifications")
+src\servers\prompts.ts:    let query = supabase.from("prompts").select("*").eq("is_public", true);
+src\servers\prompts.ts:      .from("prompts")
+src\servers\prompts.ts:      .from("prompts")
+src\servers\prompts.ts:      .from("prompts")
+src\servers\prompts.ts:      .from("prompts")
+src\servers\prompts.ts:      .from("prompts")
+src\servers\upload.ts:    .from(bucket)
+src\servers\upload.ts:  const { data, error } = await supabase.storage.from(bucket).list(path);
+src\servers\user.ts:    .from("user_profiles")
+src\servers\user.ts:      .from("membership_levels")
+src\servers\user.ts:    .from("user_profiles")

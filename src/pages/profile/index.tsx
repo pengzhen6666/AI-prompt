@@ -5,7 +5,6 @@ import {
   getUserInfoServerAPI,
 } from "@/servers/user";
 import {
-  redeemCodeServerAPI,
   redeemGiftCardServerAPI,
 } from "@/servers/giftcards";
 import { applyInvitationCode } from "@/servers/invitation";
@@ -871,7 +870,7 @@ export default function Profile() {
                         className={cn(
                           "fill-current",
                           profile?.membership_code === "ultra" &&
-                            "text-amber-800"
+                          "text-amber-800"
                         )}
                       />
                       {profile?.membership_level?.name || "普通用户"}
@@ -991,10 +990,10 @@ export default function Profile() {
                     ))}
                     {(!activePersona.responses.dm ||
                       activePersona.responses.dm.length === 0) && (
-                      <div className="text-[10px] text-zinc-300 dark:text-zinc-600 italic py-1">
-                        暂无数据
-                      </div>
-                    )}
+                        <div className="text-[10px] text-zinc-300 dark:text-zinc-600 italic py-1">
+                          暂无数据
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -1039,10 +1038,10 @@ export default function Profile() {
                       ))}
                     {(!activePersona.responses.reply ||
                       activePersona.responses.reply.length === 0) && (
-                      <div className="text-[10px] text-zinc-300 dark:text-zinc-600 italic py-1">
-                        暂无数据
-                      </div>
-                    )}
+                        <div className="text-[10px] text-zinc-300 dark:text-zinc-600 italic py-1">
+                          暂无数据
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -1087,10 +1086,10 @@ export default function Profile() {
                       ))}
                     {(!activePersona.responses.comment ||
                       activePersona.responses.comment.length === 0) && (
-                      <div className="text-[10px] text-zinc-300 dark:text-zinc-600 italic py-1">
-                        暂无数据
-                      </div>
-                    )}
+                        <div className="text-[10px] text-zinc-300 dark:text-zinc-600 italic py-1">
+                          暂无数据
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
@@ -1107,11 +1106,10 @@ export default function Profile() {
                 setIsManageMode(false);
                 setSelectedIds([]);
               }}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                activeTab === "prompts"
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "prompts"
                   ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20"
                   : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-              }`}
+                }`}
             >
               <ImageIcon size={16} />
               我的 Prompt
@@ -1122,11 +1120,10 @@ export default function Profile() {
                 setIsManageMode(false);
                 setSelectedIds([]);
               }}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                activeTab === "copywriting"
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "copywriting"
                   ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20"
                   : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-              }`}
+                }`}
             >
               <FileText size={16} />
               我的文案
@@ -1137,21 +1134,21 @@ export default function Profile() {
             {(activeTab === "prompts"
               ? prompts.length > 0
               : copywriting.length > 0) && (
-              <button
-                onClick={() => {
-                  setIsManageMode(!isManageMode);
-                  setSelectedIds([]);
-                }}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border",
-                  isManageMode
-                    ? "bg-indigo-50 text-indigo-600 border-indigo-200"
-                    : "bg-white text-zinc-600 border-zinc-100 hover:border-zinc-200"
-                )}
-              >
-                {isManageMode ? "退出管理" : "批量管理"}
-              </button>
-            )}
+                <button
+                  onClick={() => {
+                    setIsManageMode(!isManageMode);
+                    setSelectedIds([]);
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border",
+                    isManageMode
+                      ? "bg-indigo-50 text-indigo-600 border-indigo-200"
+                      : "bg-white text-zinc-600 border-zinc-100 hover:border-zinc-200"
+                  )}
+                >
+                  {isManageMode ? "退出管理" : "批量管理"}
+                </button>
+              )}
           </div>
         </div>
 
@@ -1222,11 +1219,10 @@ export default function Profile() {
                         </p>
                         <div className="pt-4 border-t border-dashed border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
                           <span
-                            className={`text-[10px] font-bold px-2 py-1 rounded-md ${
-                              item.is_submitted
+                            className={`text-[10px] font-bold px-2 py-1 rounded-md ${item.is_submitted
                                 ? "bg-green-50 text-green-600"
                                 : "bg-zinc-50 text-zinc-400"
-                            }`}
+                              }`}
                           >
                             {item.is_submitted ? "已投稿" : "未投稿"}
                           </span>
@@ -1322,7 +1318,7 @@ export default function Profile() {
                       <div className="flex items-center justify-between mt-auto pt-4 border-t border-dashed border-zinc-100 dark:border-zinc-800">
                         <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
                           {Array.isArray(item.results) &&
-                          item.results.length > 0 ? (
+                            item.results.length > 0 ? (
                             item.results
                               .slice(0, 3)
                               .map((res: any, idx: number) => (
@@ -1443,7 +1439,7 @@ export default function Profile() {
                 className="px-4 py-2 rounded-xl text-sm font-bold text-white/70 dark:text-zinc-500 hover:bg-white/10 dark:hover:bg-black/5 transition-colors"
               >
                 {selectedIds.length ===
-                (activeTab === "prompts" ? prompts.length : copywriting.length)
+                  (activeTab === "prompts" ? prompts.length : copywriting.length)
                   ? "取消全选"
                   : "全选"}
               </button>
@@ -1584,11 +1580,11 @@ export default function Profile() {
                       className={cn(
                         "p-2.5 rounded-xl",
                         dialogData?.color === "indigo" &&
-                          "bg-indigo-50 dark:bg-indigo-100/10 text-indigo-500",
+                        "bg-indigo-50 dark:bg-indigo-100/10 text-indigo-500",
                         dialogData?.color === "blue" &&
-                          "bg-blue-50 dark:bg-blue-100/10 text-blue-500",
+                        "bg-blue-50 dark:bg-blue-100/10 text-blue-500",
                         dialogData?.color === "purple" &&
-                          "bg-purple-50 dark:bg-purple-100/10 text-purple-500"
+                        "bg-purple-50 dark:bg-purple-100/10 text-purple-500"
                       )}
                     >
                       {dialogData?.color === "indigo" && <Mail size={20} />}
@@ -1625,11 +1621,11 @@ export default function Profile() {
                       className={cn(
                         "px-3 py-1.5 text-[11px] rounded-full border transition-all cursor-pointer hover:scale-105 active:scale-95",
                         dialogData?.color === "indigo" &&
-                          "bg-indigo-50/50 dark:bg-indigo-500/5 text-zinc-600 dark:text-indigo-300 border-indigo-100/50 dark:border-indigo-500/20 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-500/30",
+                        "bg-indigo-50/50 dark:bg-indigo-500/5 text-zinc-600 dark:text-indigo-300 border-indigo-100/50 dark:border-indigo-500/20 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-500/30",
                         dialogData?.color === "blue" &&
-                          "bg-blue-50/50 dark:bg-blue-500/5 text-zinc-600 dark:text-blue-300 border-blue-100/50 dark:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/30",
+                        "bg-blue-50/50 dark:bg-blue-500/5 text-zinc-600 dark:text-blue-300 border-blue-100/50 dark:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/30",
                         dialogData?.color === "purple" &&
-                          "bg-purple-50/50 dark:bg-purple-500/5 text-zinc-600 dark:text-purple-300 border-purple-100/50 dark:border-purple-500/20 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-200 dark:hover:border-purple-500/30"
+                        "bg-purple-50/50 dark:bg-purple-500/5 text-zinc-600 dark:text-purple-300 border-purple-100/50 dark:border-purple-500/20 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-200 dark:hover:border-purple-500/30"
                       )}
                       title={text}
                     >

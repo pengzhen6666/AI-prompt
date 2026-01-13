@@ -74,7 +74,7 @@ const MattingPage = () => {
         setIsLoadingHistory(true);
         try {
             const { data, error } = await supabase
-                .from("pzcreated image")
+                .from("pzcreated_image")
                 .select("*")
                 .eq("user_id", user.id)
                 .order("created_at", { ascending: false })
@@ -134,7 +134,7 @@ const MattingPage = () => {
 
             // 6. DB Insert
             const { error: dbError } = await supabase
-                .from("pzcreated image")
+                .from("pzcreated_image")
                 .insert([{
                     user_id: user.id,
                     original_url: originalUrl,
@@ -156,7 +156,7 @@ const MattingPage = () => {
 
         try {
             const { error } = await supabase
-                .from("pzcreated image")
+                .from("pzcreated_image")
                 .delete()
                 .eq("id", id)
                 .eq("user_id", user.id);
@@ -431,8 +431,8 @@ const MattingPage = () => {
             // 2. Pre-process image (Scale down for stability)
             // Excessive resolution (like 4K) is the main reason for browser freeze.
             // 1280px is a sweet spot for quality vs performance.
-            const response = await fetch(originalImage);
-            const rawBlob = await response.blob();
+            const imgResponse = await fetch(originalImage);
+            const rawBlob = await imgResponse.blob();
             const rawFile = new File([rawBlob], "input.png", { type: rawBlob.type });
 
             const compressedFile = await compressImage(rawFile, 10, 1280); // Max 10MB, Max 1280px

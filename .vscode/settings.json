@@ -1,2 +1,10 @@
 {
+    "deno.enable": true,
+    "deno.unstable": true,
+    "deno.enablePaths": [
+        "supabase/functions"
+    ],
+    "[typescript]": {
+        "editor.defaultFormatter": "deno.format"
+    }
 }

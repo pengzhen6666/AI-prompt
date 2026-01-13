@@ -406,19 +406,17 @@ const App = () => {
         {/* Categories (Pills) - Expandable */}
         <div className="relative w-full mb-6">
           <div
-            className={`flex flex-wrap gap-3 transition-all duration-300 ease-in-out ${
-              isExpanded ? "max-h-[1000px]" : "max-h-[50px] overflow-hidden"
-            } justify-start pr-12`}
+            className={`flex flex-wrap gap-3 transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[1000px]" : "max-h-[50px] overflow-hidden"
+              } justify-start pr-12`}
           >
             {(categories || DEFAULT_CATEGORIES).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-300 border-2 ${
-                  activeCategory === cat
+                className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-300 border-2 ${activeCategory === cat
                     ? "bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-gray-900 dark:border-zinc-100 shadow-lg shadow-gray-200 dark:shadow-none"
                     : "bg-transparent text-gray-400 dark:text-zinc-500 border-gray-200 dark:border-zinc-800 hover:border-gray-900 dark:hover:border-zinc-100 hover:text-gray-900 dark:hover:text-zinc-100"
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -432,9 +430,8 @@ const App = () => {
           >
             <div className="bg-white dark:bg-zinc-800 p-1.5 rounded-full border border-gray-100 dark:border-zinc-700">
               <ChevronDown
-                className={`w-4 h-4 text-gray-500 dark:text-zinc-400 transition-transform duration-300 ${
-                  isExpanded ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 text-gray-500 dark:text-zinc-400 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""
+                  }`}
               />
             </div>
           </button>
@@ -642,9 +639,8 @@ const App = () => {
                                   <ImageActionMenu
                                     imageUrl={url}
                                     allUrls={selectedImage.urls}
-                                    downloadName={`${selectedImage.title}-${
-                                      i + 1
-                                    }`}
+                                    downloadName={`${selectedImage.title}-${i + 1
+                                      }`}
                                     className="w-full h-full"
                                   >
                                     <img
@@ -709,20 +705,20 @@ const App = () => {
                           onClick={() => {
                             const title =
                               selectedImage.copywritingResults &&
-                              selectedImage.copywritingResults.length > 0
+                                selectedImage.copywritingResults.length > 0
                                 ? selectedImage.copywritingResults[
-                                    selectedStyleIndex
-                                  ]?.title
+                                  selectedStyleIndex
+                                ]?.title
                                 : selectedImage.title;
                             navigator.clipboard.writeText(title);
                             toast.success("标题已复制");
                           }}
                         >
                           {selectedImage.copywritingResults &&
-                          selectedImage.copywritingResults.length > 0
+                            selectedImage.copywritingResults.length > 0
                             ? selectedImage.copywritingResults[
-                                selectedStyleIndex
-                              ]?.title
+                              selectedStyleIndex
+                            ]?.title
                             : selectedImage.title}
                         </h3>
                         {selectedImage.copywritingResults &&
@@ -925,11 +921,10 @@ const App = () => {
 
       {/* Toast */}
       <div
-        className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-3.5 rounded-full font-bold shadow-2xl transition-all duration-300 flex items-center gap-2.5 z-50 ${
-          isCopied
+        className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-3.5 rounded-full font-bold shadow-2xl transition-all duration-300 flex items-center gap-2.5 z-50 ${isCopied
             ? "translate-y-0 opacity-100"
             : "translate-y-10 opacity-0 pointer-events-none"
-        }`}
+          }`}
       >
         <div className="bg-yellow-400 rounded-full p-0.5">
           <Check className="w-3.5 h-3.5 text-black" />
