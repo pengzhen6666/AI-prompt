@@ -119,6 +119,13 @@ const PROMPT_STYLES = [
     image:
       "https://qbemmnrwjqrmxxnixfmg.supabase.co/storage/v1/object/public/siteweb/public/35944f18854d8659fdadf0899d7821061e533e713b2db6a28f9bb4413333c3a5.png",
   },
+  {
+    id: "ancient",
+    name: "古风意境",
+    description: "高耸云髻，锦绣华服，电影级光影意境",
+    image:
+      "https://qbemmnrwjqrmxxnixfmg.supabase.co/storage/v1/object/public/siteweb/public/8ef96b98f4da96acea2dc5aca502991bd1a16532242af27223fc3d18fc6f500a.jpeg",
+  },
 ];
 const MEMBERSHIP_STYLE_LIMITS: Record<string, number> = {
   free: 1,

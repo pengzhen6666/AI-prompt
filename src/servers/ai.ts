@@ -10,6 +10,7 @@ import photoTestMD from "@/markdown/prompt/v3.md?raw";
 import facePromptMD from "@/markdown/face/face-prompt.md?raw";
 import actionPromptMD from "@/markdown/action/action-prompt.md?raw";
 import videoPromptMD from "@/markdown/video/video-prompt.md?raw";
+import ancientStyleMD from "@/markdown/example/ancient-style.md?raw";
 import { encryptData } from "@/lib/crypto";
 import { mdVersion } from "@/version";
 export interface XHSResult {
@@ -492,7 +493,12 @@ export const reversingPromptFromImages = async (
   const versions = mdVersion();
   const matchedVersion = versions.find((v) => v.key === personStyle);
   let baseInstruction =
-    matchedVersion?.md || versions.find((v) => v.default)?.md || versions[0].md;
+    (matchedVersion?.md || versions.find((v) => v.default)?.md || versions[0].md);
+
+  // 如果选择了古风，则作为视觉图层叠加上去，而不是覆盖主模型
+  if (style === "ancient" || style === "古风意境") {
+    baseInstruction += "\n\n" + ancientStyleMD;
+  }
   // 默认人脸
   let defaultFaceDescription =
     "detailed portrait of a beautiful young East Asian woman, delicate features, fair skin, oval face shape, natural soft makeup, slightly arched eyebrows, large bright brown eyes, gentle double eyelids, small defined nose, full and naturally tinted coral-pink lips (matte finish), soft natural expression, smooth shoulder line visible.";
